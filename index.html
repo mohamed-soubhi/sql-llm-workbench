@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SQL + LLM Workbench — learn SQL and English-to-SQL</title>
+<meta name="description" content="Learn SQL and how LLMs turn plain English into SQL, using a live in-browser SQLite database. No backend, no install." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: oklch(17% 0.012 265); --bg-2: oklch(21% 0.014 265);
+    --surface: oklch(24% 0.016 265); --surface-2: oklch(28% 0.018 265);
+    --line: oklch(33% 0.02 265); --ink: oklch(93% 0.01 265);
+    --ink-dim: oklch(70% 0.015 265); --ink-faint: oklch(55% 0.015 265);
+    --accent: oklch(78% 0.16 72); --accent-ink: oklch(20% 0.03 72);
+    --good: oklch(78% 0.15 155); --bad: oklch(70% 0.19 25); --blue: oklch(75% 0.12 240);
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --serif: "Fraunces", ui-serif, Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --radius: 12px;
+  }
+  :root[data-theme="light"] {
+    --bg: oklch(97% 0.008 85); --bg-2: oklch(94% 0.01 85);
+    --surface: oklch(100% 0 0); --surface-2: oklch(96% 0.012 85);
+    --line: oklch(86% 0.015 85); --ink: oklch(22% 0.02 265);
+    --ink-dim: oklch(42% 0.02 265); --ink-faint: oklch(58% 0.015 265);
+    --accent: oklch(58% 0.16 55); --accent-ink: oklch(98% 0.01 55);
+    --good: oklch(52% 0.13 155); --bad: oklch(55% 0.19 25); --blue: oklch(52% 0.15 250);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); background: var(--bg);
+    font-family: var(--sans); font-size: 15px; line-height: 1.65; -webkit-font-smoothing: antialiased;
+  }
+  code { font-family: var(--mono); }
+
+  /* header */
+  header.top {
+    position: sticky; top: 0; z-index: 40;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 12px 22px; border-bottom: 1px solid var(--line);
+    background: color-mix(in oklch, var(--bg) 86%, transparent); backdrop-filter: blur(10px);
+  }
+  .brand { font-family: var(--mono); font-size: 12.5px; color: var(--ink-dim); letter-spacing: .02em; }
+  .brand b { color: var(--accent); }
+  header .spacer { flex: 1 1 auto; }
+  header nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  header nav a, .btn {
+    font-family: var(--mono); font-size: 12px; text-decoration: none; color: var(--ink-dim);
+    padding: 6px 10px; border-radius: 8px; border: 1px solid transparent;
+  }
+  header nav a:hover { color: var(--ink); background: var(--surface-2); }
+  .btn { border-color: var(--line); }
+  .btn:hover { color: var(--ink); border-color: var(--ink-faint); cursor: pointer; }
+  .btn.solid { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 700; }
+
+  /* hero */
+  .hero {
+    padding: 74px 22px 60px; max-width: 1080px; margin: 0 auto;
+    background:
+      radial-gradient(760px 380px at 82% -20%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 62%),
+      radial-gradient(560px 320px at 8% 10%, color-mix(in oklch, var(--blue) 10%, transparent), transparent 60%);
+  }
+  .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  h1.big {
+    font-family: var(--serif); font-weight: 500; letter-spacing: -0.03em;
+    font-size: clamp(2.6rem, 1.4rem + 5vw, 5rem); line-height: 1.02; margin: 14px 0 18px; max-width: 16ch;
+  }
+  h1.big em { font-style: italic; color: var(--accent); }
+  .hero p.lead { font-size: clamp(1.02rem, .9rem + .5vw, 1.28rem); color: var(--ink-dim); max-width: 62ch; margin: 0 0 26px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .cta .btn { padding: 12px 20px; font-size: 13px; border-radius: 10px; }
+  .cta .note { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); }
+
+  /* sections */
+  main { max-width: 1080px; margin: 0 auto; padding: 0 22px 100px; }
+  section { padding: 46px 0; border-top: 1px solid var(--line); }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .sec-head .n { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+  h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.5rem); letter-spacing: -0.02em; margin: 0; }
+  h3 { font-family: var(--mono); font-size: 13px; letter-spacing: .02em; margin: 30px 0 8px; color: var(--ink); }
+  p { max-width: 74ch; }
+  .sub { color: var(--ink-dim); max-width: 68ch; margin-top: 4px; }
+  ol, ul { max-width: 74ch; padding-left: 20px; }
+  li { margin: 5px 0; }
+
+  /* code + result */
+  pre {
+    background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 14px 16px; overflow: auto;
+    font-family: var(--mono); font-size: 13px; line-height: 1.6; margin: 14px 0 0;
+  }
+  pre .c { color: var(--ink-faint); }
+  pre .kw { color: var(--accent); }
+  .res-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin: 14px 0 6px; }
+  table.res { border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; margin: 0; width: auto; max-width: 100%; display: block; overflow-x: auto; }
+  table.res th, table.res td { text-align: left; padding: 6px 14px 6px 10px; border-bottom: 1px solid color-mix(in oklch, var(--line) 70%, transparent); white-space: nowrap; }
+  table.res th { color: var(--accent); font-weight: 500; border-bottom: 1px solid var(--line); }
+  .qcard { background: color-mix(in oklch, var(--bg-2) 50%, transparent); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; margin: 18px 0; }
+  .qcard > .qh { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); margin-bottom: 4px; }
+
+  /* diagram */
+  .flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin: 18px 0; }
+  .box { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 10px 14px; min-width: 120px; }
+  .box .t { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+  .box .d { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; }
+  .box.accent { border-color: color-mix(in oklch, var(--accent) 60%, var(--line)); }
+  .box.accent .t { color: var(--accent); }
+  .box.ext { border-style: dashed; } .box.ext .t { color: var(--blue); }
+  .arrow { display: flex; align-items: center; padding: 0 10px; color: var(--ink-faint); font-family: var(--mono); font-size: 15px; }
+  .pipe { display: flex; flex-direction: column; gap: 0; }
+  .pipe .step { display: flex; align-items: center; gap: 12px; }
+  .pipe .step .g { font-family: var(--mono); color: var(--accent); }
+  .pipe .step .l { font-family: var(--mono); font-size: 12.5px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  .pipe .step .cap { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+
+  .callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); border-radius: 9px; padding: 13px 16px; margin: 16px 0; max-width: 74ch; }
+  .callout.warn { border-left-color: var(--bad); }
+  .callout .h { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 5px; }
+  .callout.warn .h { color: var(--bad); }
+
+  table.map { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 14px 0; }
+  table.map th, table.map td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.map thead th { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); font-weight: 500; }
+  table.map td.mono { font-family: var(--mono); font-size: 12px; color: var(--accent); white-space: nowrap; }
+  table.map td.desc { color: var(--ink-dim); }
+  tr:hover td { background: color-mix(in oklch, var(--accent) 6%, transparent); }
+
+  footer { border-top: 1px solid var(--line); padding: 26px 22px 60px; max-width: 1080px; margin: 0 auto; color: var(--ink-faint); font-family: var(--mono); font-size: 12px; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 560px) {
+    .hero { padding: 48px 18px 40px; }
+    main { padding: 0 18px 70px; }
+    header.top { padding: 10px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <span class="brand"><b>sql&nbsp;+&nbsp;llm</b> workbench</span>
+  <div class="spacer"></div>
+  <nav>
+    <a href="#sql">SQL</a>
+    <a href="#llm">LLM → SQL</a>
+    <a href="#exercises">Exercises</a>
+    <a href="help.html">Architecture</a>
+    <a class="btn" href="sql-workbench.html">Open workbench →</a>
+    <button class="btn" id="themeBtn" title="Toggle theme">◐</button>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="kicker">Learn by querying real data</div>
+  <h1 class="big">SQL, and how an LLM <em>writes it for you</em>.</h1>
+  <p class="lead">A real SQLite database that lives in your browser. Start from <code>SELECT *</code>, work up to joins — then watch a model turn plain English into the same queries, and learn why the prompt makes or breaks it.</p>
+  <div class="cta">
+    <a class="btn solid" href="sql-workbench.html">Open the workbench →</a>
+    <a class="btn" href="help.html">Architecture &amp; code map</a>
+    <span class="note">no backend · no install · AI runs on your local Ollama</span>
+  </div>
+</div>
+
+<main>
+
+  <section id="box">
+    <div class="sec-head"><span class="n">00</span><h2>What's in the box</h2></div>
+    <p class="sub">Everything ships as static files. The whole application — database engine, data, UI, and AI wiring — is a single HTML file.</p>
+    <table class="map">
+      <thead><tr><th>File</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">sql-workbench.html</td><td class="desc">The app — database, data, UI, AI, all in one file.</td></tr>
+        <tr><td class="mono">help.html</td><td class="desc">Architecture, workflow, and a line-by-line code map.</td></tr>
+        <tr><td class="mono">index.html</td><td class="desc">This page — the tutorial.</td></tr>
+        <tr><td class="mono">Script_Create_Tables.sql.txt</td><td class="desc">The 5-table schema.</td></tr>
+        <tr><td class="mono">*.csv</td><td class="desc">The raw HR dataset (headerless), embedded into the page.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>The dataset — 5 tables, 36 rows</h3>
+    <table class="map">
+      <thead><tr><th>Table</th><th>Rows</th><th>Key columns</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">EMPLOYEES</td><td>10</td><td class="desc">EMP_ID, F_NAME, L_NAME, SALARY, JOB_ID, DEP_ID</td></tr>
+        <tr><td class="mono">JOBS</td><td>10</td><td class="desc">JOB_IDENT, JOB_TITLE, MIN_SALARY, MAX_SALARY</td></tr>
+        <tr><td class="mono">JOB_HISTORY</td><td>10</td><td class="desc">EMPL_ID, START_DATE, JOBS_ID, DEPT_ID</td></tr>
+        <tr><td class="mono">DEPARTMENTS</td><td>3</td><td class="desc">DEPT_ID_DEP, DEP_NAME, MANAGER_ID, LOC_ID</td></tr>
+        <tr><td class="mono">LOCATIONS</td><td>3</td><td class="desc">LOCT_ID, DEP_ID_LOC</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="quickstart">
+    <div class="sec-head"><span class="n">01</span><h2>Quickstart</h2></div>
+    <p class="sub"><strong>Just want SQL?</strong> Open <code>sql-workbench.html</code> in a browser — the editor and database work immediately, offline. <strong>Want the AI too?</strong> Point it at your local <a href="https://ollama.com" style="color:var(--accent)">Ollama</a>:</p>
+    <pre><span class="c"># Option A — allow the browser to reach Ollama, then open the file directly</span>
+OLLAMA_ORIGINS='*' ollama serve
+
+<span class="c"># Option B — serve the page, then browse to it</span>
+python3 -m http.server 8000
+<span class="c"># → http://localhost:8000/sql-workbench.html</span>
+
+<span class="c"># check the model name matches one you have installed:</span>
+ollama list</pre>
+    <p class="sub">Set the model in the top bar (default <code>deepseek-v4.1-flash:cloud</code>).</p>
+  </section>
+
+  <section id="sql">
+    <div class="sec-head"><span class="n">02</span><h2>Part 1 — SQL, from zero</h2></div>
+    <p class="sub">Run each of these in the <strong>Write SQL</strong> tab. Type it, press <code>Ctrl</code>+<code>Enter</code>, read the table that comes back. Every result below is real output from the dataset.</p>
+
+    <div class="qcard">
+      <div class="qh">1 · Read a table</div>
+      <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> EMPLOYEES;</pre>
+      <p class="sub" style="margin-top:10px"><code>SELECT</code> picks columns, <code>*</code> means all of them, <code>FROM</code> names the table. 10 rows come back.</p>
+    </div>
+
+    <div class="qcard">
+      <div class="qh">2 · Pick and rename columns</div>
+      <pre><span class="kw">SELECT</span> F_NAME, L_NAME, SALARY <span class="kw">FROM</span> EMPLOYEES;</pre>
+    </div>
+
+    <div class="qcard">
+      <div class="qh">3 · Filter rows with WHERE</div>
+      <pre><span class="kw">SELECT</span> F_NAME, L_NAME, SALARY
+<span class="kw">FROM</span> EMPLOYEES
+<span class="kw">WHERE</span> SALARY &gt; 70000;</pre>
+      <p class="sub" style="margin-top:10px">Comparisons: <code>=</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>, <code>&lt;&gt;</code>. Combine with <code>AND</code> / <code>OR</code>.</p>
+    </div>
+
+    <div class="qcard">
+      <div class="qh">4 · Sort and limit</div>
+      <pre><span class="kw">SELECT</span> F_NAME || ' ' || L_NAME <span class="kw">AS</span> name, SALARY
+<span class="kw">FROM</span> EMPLOYEES
+<span class="kw">ORDER BY</span> SALARY <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> 5;</pre>
+      <p class="sub" style="margin-top:10px"><code>||</code> joins text in SQLite; <code>AS</code> names the result column; <code>ORDER BY ... DESC</code> sorts high→low.</p>
+      <div class="res-label">Result</div>
+      <table class="res">
+        <thead><tr><th>name</th><th>SALARY</th></tr></thead>
+        <tbody>
+          <tr><td>John Thomas</td><td>100000</td></tr>
+          <tr><td>Nancy Allen</td><td>90000</td></tr>
+          <tr><td>Alice James</td><td>80000</td></tr>
+          <tr><td>Ahmed Hussain</td><td>70000</td></tr>
+          <tr><td>Andrea Jones</td><td>70000</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="qcard">
+      <div class="qh">5 · Aggregate — count, average, min, max</div>
+      <pre><span class="kw">SELECT</span> <span class="kw">COUNT</span>(*) <span class="kw">AS</span> employees,
+       <span class="kw">ROUND</span>(<span class="kw">AVG</span>(SALARY), 0) <span class="kw">AS</span> avg_salary,
+       <span class="kw">MIN</span>(SALARY) <span class="kw">AS</span> lowest,
+       <span class="kw">MAX</span>(SALARY) <span class="kw">AS</span> highest
+<span class="kw">FROM</span> EMPLOYEES;</pre>
+      <p class="sub" style="margin-top:10px">An aggregate collapses many rows into one number.</p>
+    </div>
+
+    <div class="qcard">
+      <div class="qh">6 · Group — one row per category</div>
+      <pre><span class="kw">SELECT</span> SEX, <span class="kw">COUNT</span>(*) <span class="kw">AS</span> n
+<span class="kw">FROM</span> EMPLOYEES
+<span class="kw">GROUP BY</span> SEX;</pre>
+      <div class="res-label">Result</div>
+      <table class="res">
+        <thead><tr><th>SEX</th><th>n</th></tr></thead>
+        <tbody><tr><td>F</td><td>5</td></tr><tr><td>M</td><td>5</td></tr></tbody>
+      </table>
+      <p class="sub" style="margin-top:10px"><code>GROUP BY</code> splits rows into buckets; the aggregate runs per bucket.</p>
+    </div>
+
+    <div class="qcard">
+      <div class="qh">7 · Join — combine two tables</div>
+      <pre><span class="kw">SELECT</span> d.DEP_NAME,
+       <span class="kw">COUNT</span>(*) <span class="kw">AS</span> people,
+       <span class="kw">ROUND</span>(<span class="kw">AVG</span>(e.SALARY), 0) <span class="kw">AS</span> avg_salary
+<span class="kw">FROM</span> EMPLOYEES e
+<span class="kw">JOIN</span> DEPARTMENTS d <span class="kw">ON</span> e.DEP_ID = d.DEPT_ID_DEP
+<span class="kw">GROUP BY</span> d.DEP_NAME
+<span class="kw">ORDER BY</span> avg_salary <span class="kw">DESC</span>;</pre>
+      <p class="sub" style="margin-top:10px">The heart of relational SQL. <code>e</code> and <code>d</code> are <em>aliases</em>; <code>JOIN ... ON</code> states the matching rule.</p>
+      <div class="res-label">Result</div>
+      <table class="res">
+        <thead><tr><th>DEP_NAME</th><th>people</th><th>avg_salary</th></tr></thead>
+        <tbody>
+          <tr><td>Architect Group</td><td>3</td><td>86667.0</td></tr>
+          <tr><td>Design Team</td><td>3</td><td>66667.0</td></tr>
+          <tr><td>Software Group</td><td>4</td><td>65000.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="qcard">
+      <div class="qh">8 · Join three tables</div>
+      <pre><span class="kw">SELECT</span> e.F_NAME || ' ' || e.L_NAME <span class="kw">AS</span> name, j.JOB_TITLE, e.SALARY
+<span class="kw">FROM</span> EMPLOYEES e
+<span class="kw">JOIN</span> JOBS j <span class="kw">ON</span> e.JOB_ID = j.JOB_IDENT
+<span class="kw">WHERE</span> e.SALARY &gt; 70000
+<span class="kw">ORDER BY</span> e.SALARY <span class="kw">DESC</span>;</pre>
+      <div class="res-label">Result</div>
+      <table class="res">
+        <thead><tr><th>name</th><th>JOB_TITLE</th><th>SALARY</th></tr></thead>
+        <tbody>
+          <tr><td>John Thomas</td><td>Sr. Architect</td><td>100000</td></tr>
+          <tr><td>Nancy Allen</td><td>Lead Architect</td><td>90000</td></tr>
+          <tr><td>Alice James</td><td>Sr. Software Developer</td><td>80000</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The join map</h3>
+    <pre>EMPLOYEES.DEP_ID    ──┐
+                     ├─► DEPARTMENTS.DEPT_ID_DEP
+JOB_HISTORY.DEPT_ID ─┘
+
+EMPLOYEES.JOB_ID    ──► JOBS.JOB_IDENT
+JOB_HISTORY.JOBS_ID ──► JOBS.JOB_IDENT
+JOB_HISTORY.EMPL_ID ──► EMPLOYEES.EMP_ID
+DEPARTMENTS.LOC_ID  ──► LOCATIONS.LOCT_ID</pre>
+  </section>
+
+  <section id="llm">
+    <div class="sec-head"><span class="n">03</span><h2>Part 2 — How an LLM writes SQL</h2></div>
+    <p class="sub">The <strong>Ask</strong> tab takes <em>“who earns the most, with their department?”</em> and produces the query you'd have written by hand. The mechanism is simpler than it looks.</p>
+
+    <h3>The pipeline</h3>
+    <div class="pipe">
+      <div class="step"><span class="g">▸</span><span class="l">your question</span></div>
+      <div class="step"><span class="g">↓</span><span class="cap">build a prompt</span></div>
+      <div class="step"><span class="g">▸</span><span class="l">schema + glossary + rules + examples + question</span></div>
+      <div class="step"><span class="g">↓</span><span class="cap">call the model · temperature 0</span></div>
+      <div class="step"><span class="g">▸</span><span class="l">extract the SQL — strip prose, keep the SELECT</span></div>
+      <div class="step"><span class="g">↓</span><span class="cap">read-only guard</span></div>
+      <div class="step"><span class="g">▸</span><span class="l">run it in SQLite · show the SQL + the result</span></div>
+    </div>
+
+    <h3>The four ingredients of a good NL→SQL prompt</h3>
+    <ol>
+      <li><strong>Schema</strong> — the actual <code>CREATE TABLE</code> statements. The model must see real names; guessing produces wrong identifiers.</li>
+      <li><strong>Glossary</strong> — the semantics the schema can't express. <em>“Full name is <code>F_NAME || ' ' || L_NAME</code>”</em>, <em>“join <code>DEP_ID</code> to <code>DEPT_ID_DEP</code>”</em>. This is what makes joins work.</li>
+      <li><strong>Rules</strong> — constrain output: <em>“Output ONLY the SQL. One SELECT. No DDL/DML.”</em></li>
+      <li><strong>Examples</strong> — two or three question→SQL pairs. Few-shot examples teach shape better than instructions alone.</li>
+    </ol>
+
+    <div class="callout">
+      <div class="h">Grounding beats cleverness</div>
+      A model already knows SQL. What it doesn't know is <em>your</em> schema. Almost every bad generated query is a naming failure — an invented column, a wrong join key. Feed it the exact DDL and the join map and the error rate collapses. That's the single highest-leverage thing you can do.
+    </div>
+
+    <h3>Guardrails</h3>
+    <p class="sub">Generated SQL is untrusted input. The app accepts only statements starting with <code>SELECT</code> / <code>WITH</code> / <code>EXPLAIN</code> and containing no <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, <code>DROP</code>, <code>ALTER</code>, <code>CREATE</code>, <code>REPLACE</code>, <code>TRUNCATE</code>, or <code>ATTACH</code>. Anything else is shown but <strong>not run</strong>. And the database is in-memory — reloading resets it — so a mistake can't touch your files.</p>
+
+    <h3>Failure modes and fixes</h3>
+    <table class="map">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">no such column</td><td class="desc">Model guessed a name</td><td class="desc">Tighten the schema block; list columns explicitly</td></tr>
+        <tr><td class="mono">wrong / missing join</td><td class="desc">Join keys not stated</td><td class="desc">Add the join to the glossary</td></tr>
+        <tr><td class="mono">prose not SQL</td><td class="desc">Prompt not strict enough</td><td class="desc">“Output ONLY the SQL” + few-shot</td></tr>
+        <tr><td class="mono">two statements</td><td class="desc">Ambiguous question</td><td class="desc">Ask narrower; keep one SELECT</td></tr>
+        <tr><td class="mono">odd result</td><td class="desc">Model hallucinated rows</td><td class="desc">Set <code>temperature: 0</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Try these in the Ask tab</h3>
+    <ul>
+      <li>How many employees are there?</li>
+      <li>List the top 3 salaries with full names.</li>
+      <li>Which department has the highest average salary?</li>
+      <li>Show female employees earning more than 70,000.</li>
+      <li>What is the pay range for a Sr. Architect?</li>
+    </ul>
+    <p class="sub">Watch the generated SQL appear above each answer — that's the model showing its work.</p>
+  </section>
+
+  <section id="exercises">
+    <div class="sec-head"><span class="n">04</span><h2>Part 3 — Exercises</h2></div>
+    <p class="sub">Try each in the <strong>Write SQL</strong> tab. Every answer is a variation of Part 1.</p>
+    <ol>
+      <li>List every employee's full name and salary, cheapest first.</li>
+      <li>How many people work in the Software Group?</li>
+      <li>Show the highest-paid person in each department.</li>
+      <li>Which job titles pay more than 90,000 at the top?</li>
+      <li>Find employees hired before 2001 (hint: <code>JOB_HISTORY.START_DATE</code> is <code>YYYY-MM-DD</code> text — string comparison sorts correctly).</li>
+      <li>Count how many distinct departments appear in <code>JOB_HISTORY</code>.</li>
+    </ol>
+  </section>
+
+  <section id="arch">
+    <div class="sec-head"><span class="n">05</span><h2>Architecture</h2></div>
+    <div class="flow">
+      <div class="box accent"><div class="t">UI layer</div><div class="d">tabs · chat · editor · results</div></div>
+      <div class="arrow">→</div>
+      <div class="box"><div class="t">sql.js</div><div class="d">SQLite compiled to WASM</div></div>
+      <div class="arrow">↑</div>
+      <div class="box"><div class="t">embedded data</div><div class="d">DDL + 5 CSVs as strings</div></div>
+    </div>
+    <div class="flow">
+      <div class="box ext"><div class="t">CDN · jsdelivr</div><div class="d">sql-wasm.js + .wasm</div></div>
+      <div class="arrow">→</div><div class="box">loads the engine</div>
+    </div>
+    <div class="flow">
+      <div class="box ext"><div class="t">Ollama :11434</div><div class="d">/v1/chat/completions</div></div>
+      <div class="arrow">⇄<span style="font-size:9.5px;margin-left:4px">Ask mode only</span></div>
+      <div class="box">returns one SELECT</div>
+    </div>
+    <p class="sub"><strong>Two paths, one engine.</strong> Direct SQL reaches SQLite straight. Ask goes through the model first, then the same engine. If Ollama is down, Direct mode still works. Full flow diagrams and a line-by-line code map are in <a href="help.html" style="color:var(--accent)">help.html</a>.</p>
+  </section>
+
+  <section id="deploy">
+    <div class="sec-head"><span class="n">06</span><h2>Deploy</h2></div>
+    <p class="sub">Static site — GitHub Pages serves it with no build step. Settings → Pages → Source: <em>Deploy from a branch</em> → <code>main</code> / <code>/ (root)</code>.</p>
+    <div class="callout warn">
+      <div class="h">The AI can't run on the hosted site</div>
+      A page on <code>github.io</code> can't reach your local Ollama. Pages hosts the <strong>tutorial and the SQL editor</strong>; open the file locally for the full English→SQL experience.
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  SQL + LLM Workbench · MIT · <a href="sql-workbench.html">open workbench</a> · <a href="help.html">architecture</a> · <a href="README.md">README</a>
+</footer>
+
+<script>
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  });
+</script>
+</body>
+</html>

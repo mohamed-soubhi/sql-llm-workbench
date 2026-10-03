@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SQL Workbench — Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        oklch(17% 0.012 265);
+    --bg-2:      oklch(21% 0.014 265);
+    --surface:   oklch(24% 0.016 265);
+    --surface-2: oklch(28% 0.018 265);
+    --line:      oklch(33% 0.02 265);
+    --ink:       oklch(93% 0.01 265);
+    --ink-dim:   oklch(70% 0.015 265);
+    --ink-faint: oklch(55% 0.015 265);
+    --accent:    oklch(78% 0.16 72);
+    --accent-ink:oklch(20% 0.03 72);
+    --good:      oklch(78% 0.15 155);
+    --bad:       oklch(70% 0.19 25);
+    --blue:      oklch(75% 0.12 240);
+    --radius: 10px;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --serif: "Fraunces", ui-serif, Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  :root[data-theme="light"] {
+    --bg:        oklch(97% 0.008 85);
+    --bg-2:      oklch(94% 0.01 85);
+    --surface:   oklch(100% 0 0);
+    --surface-2: oklch(96% 0.012 85);
+    --line:      oklch(86% 0.015 85);
+    --ink:       oklch(22% 0.02 265);
+    --ink-dim:   oklch(42% 0.02 265);
+    --ink-faint: oklch(58% 0.015 265);
+    --accent:    oklch(58% 0.16 55);
+    --accent-ink:oklch(98% 0.01 55);
+    --good:      oklch(52% 0.13 155);
+    --bad:       oklch(55% 0.19 25);
+    --blue:      oklch(52% 0.15 250);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 560px at 88% -12%, color-mix(in oklch, var(--accent) 9%, transparent), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14.5px;
+    line-height: 1.62;
+  }
+  code, .mono { font-family: var(--mono); }
+  code {
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px;
+    padding: 1px 5px; font-size: 0.86em; color: var(--ink);
+  }
+  a { color: var(--accent); text-underline-offset: 2px; }
+
+  header.top {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 13px 22px;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in oklch, var(--bg-2) 90%, transparent);
+    backdrop-filter: blur(8px);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 { font-family: var(--serif); font-weight: 600; font-size: 21px; margin: 0; letter-spacing: -0.01em; }
+  .brand .sub { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+  header .spacer { flex: 1 1 auto; }
+  .btn {
+    font-family: var(--mono); font-size: 12px; text-decoration: none;
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 11px; color: var(--ink-dim);
+    background: transparent; cursor: pointer;
+  }
+  .btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .btn.accent { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 700; }
+
+  .wrap { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 0; max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } nav.toc { display: none; } }
+
+  nav.toc {
+    position: sticky; top: 60px; align-self: start;
+    padding: 24px 18px 60px; border-right: 1px solid var(--line);
+    max-height: calc(100vh - 60px); overflow: auto;
+  }
+  nav.toc h2 { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 12px; }
+  nav.toc a { display: block; font-family: var(--mono); font-size: 12.5px; color: var(--ink-dim); text-decoration: none; padding: 5px 0 5px 10px; border-left: 2px solid transparent; }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+
+  main { padding: 30px 34px 90px; min-width: 0; }
+  section { margin-bottom: 46px; scroll-margin-top: 74px; }
+  h2.sec {
+    font-family: var(--serif); font-weight: 600; font-size: 27px; margin: 0 0 6px; letter-spacing: -0.015em;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  h2.sec .n { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .lede { color: var(--ink-dim); margin: 0 0 20px; max-width: 70ch; }
+  h3 { font-family: var(--mono); font-size: 13px; letter-spacing: 0.02em; color: var(--ink); margin: 26px 0 8px; }
+  p { max-width: 74ch; }
+  ul, ol { max-width: 74ch; padding-left: 20px; }
+  li { margin: 4px 0; }
+
+  /* flow diagram */
+  .flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin: 18px 0; }
+  .box {
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+    padding: 10px 14px; min-width: 132px; flex: 0 0 auto;
+  }
+  .box .t { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--ink); }
+  .box .d { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; }
+  .box.accent { border-color: color-mix(in oklch, var(--accent) 60%, var(--line)); }
+  .box.accent .t { color: var(--accent); }
+  .box.ext { border-style: dashed; }
+  .box.ext .t { color: var(--blue); }
+  .arrow { display: flex; align-items: center; padding: 0 10px; color: var(--ink-faint); font-family: var(--mono); font-size: 15px; }
+  .arrow small { font-size: 9.5px; color: var(--ink-faint); margin-left: 4px; }
+
+  /* nested containment */
+  .nest { border: 1px solid var(--line); border-radius: 14px; padding: 16px 16px 8px; margin: 18px 0; background: color-mix(in oklch, var(--bg-2) 55%, transparent); }
+  .nest > .nest-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
+
+  /* code map table */
+  table.map { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  table.map th, table.map td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.map thead th { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); font-weight: 500; }
+  table.map td.ln { font-family: var(--mono); color: var(--accent); white-space: nowrap; font-size: 12px; }
+  table.map td.what { font-family: var(--mono); font-size: 12px; color: var(--ink); white-space: nowrap; }
+  table.map td.desc { color: var(--ink-dim); }
+  table.map tr:hover td { background: color-mix(in oklch, var(--accent) 6%, transparent); }
+
+  .callout {
+    border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    background: var(--surface); border-radius: 8px; padding: 12px 15px; margin: 16px 0; max-width: 74ch;
+  }
+  .callout.warn { border-left-color: var(--bad); }
+  .callout .h { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 5px; }
+  .callout.warn .h { color: var(--bad); }
+
+  pre { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 13px 15px; overflow: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; max-width: 100%; }
+
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; font-family: var(--mono); font-size: 12.5px; }
+  .kv dt { color: var(--accent); } .kv dd { margin: 0; color: var(--ink-dim); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>SQL Workbench</h1>
+    <span class="sub">help · workflow &amp; architecture</span>
+  </div>
+  <div class="spacer"></div>
+  <a class="btn accent" href="sql-workbench.html">Open workbench →</a>
+  <button class="btn" id="themeBtn">◐ theme</button>
+</header>
+
+<div class="wrap">
+  <nav class="toc">
+    <h2>Contents</h2>
+    <a href="#overview">1 · What it is</a>
+    <a href="#arch">2 · Architecture</a>
+    <a href="#component">3 · Components</a>
+    <a href="#boot">4 · Boot workflow</a>
+    <a href="#ask">5 · Ask workflow</a>
+    <a href="#direct">6 · Direct SQL workflow</a>
+    <a href="#codemap">7 · Code map</a>
+    <a href="#data">8 · Data model</a>
+    <a href="#config">9 · Config knobs</a>
+    <a href="#notes">10 · Limits &amp; gotchas</a>
+  </nav>
+
+  <main>
+
+    <section id="overview">
+      <h2 class="sec"><span class="n">01</span> What it is</h2>
+      <p class="lede">One HTML file that turns five HR CSVs into a queryable SQLite database inside your browser, then lets you query it two ways: in plain English (translated to SQL by a local model) or by writing SQL yourself.</p>
+      <div class="callout">
+        <div class="h">The whole idea</div>
+        There is no backend. The database engine, the data, the UI, and the SQL all live in the page. The only outside calls are the sql.js library (CDN) and — for the English mode only — your local Ollama server.
+      </div>
+    </section>
+
+    <section id="arch">
+      <h2 class="sec"><span class="n">02</span> Architecture</h2>
+      <p class="lede">Two independent paths share one SQLite engine. Direct SQL reaches the engine straight; Ask goes through the model first.</p>
+
+      <div class="nest">
+        <div class="nest-label">Inside sql-workbench.html (browser)</div>
+        <div class="flow">
+          <div class="box accent">
+            <div class="t">UI layer</div>
+            <div class="d">tabs · chat · editor · result grid</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="box">
+            <div class="t">sql.js engine</div>
+            <div class="d">SQLite compiled to WASM · in-memory</div>
+          </div>
+          <div class="arrow">↑</div>
+          <div class="box">
+            <div class="t">embedded data</div>
+            <div class="d">DDL + 5 CSVs as strings</div>
+          </div>
+        </div>
+        <div class="flow">
+          <div class="box">
+            <div class="t">NL → SQL</div>
+            <div class="d">prompt · extraction · read-only guard</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="box">
+            <div class="t">UI layer</div>
+            <div class="d">shows generated SQL, runs it</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow">
+        <div class="box ext">
+          <div class="t">CDN · jsdelivr</div>
+          <div class="d">sql-wasm.js + .wasm</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="box">page loads engine</div>
+      </div>
+      <div class="flow">
+        <div class="box ext">
+          <div class="t">Ollama :11434</div>
+          <div class="d">/v1/chat/completions · deepseek</div>
+        </div>
+        <div class="arrow">
+          <span>⇄</span><small>Ask mode only</small>
+        </div>
+        <div class="box">returns one SELECT</div>
+      </div>
+
+      <h3>Layers, bottom-up</h3>
+      <ol>
+        <li><strong>Data layer</strong> — the 5 CSVs + the <code>CREATE TABLE</code> DDL, embedded as JS strings. No file reads at runtime.</li>
+        <li><strong>Engine layer</strong> — <code>sql.js</code> (SQLite/WASM). One in-memory database, built once at load.</li>
+        <li><strong>Logic layer</strong> — CSV parsing, query execution, result shaping, and (for Ask) prompt building + SQL extraction + a read-only guard.</li>
+        <li><strong>UI layer</strong> — tabs, chat stream, SQL editor, schema rail, result table.</li>
+      </ol>
+    </section>
+
+    <section id="component">
+      <h2 class="sec"><span class="n">03</span> Components</h2>
+      <table class="map">
+        <thead><tr><th>Component</th><th>What it does</th><th>Talks to</th></tr></thead>
+        <tbody>
+          <tr><td class="what">Data blob</td><td class="desc">Holds DDL + every CSV row as a string. Source of truth at load time.</td><td class="desc">boot()</td></tr>
+          <tr><td class="what">parseCSV</td><td class="desc">Minimal RFC-4180 parser. Handles quoted fields (the addresses contain commas).</td><td class="desc">boot()</td></tr>
+          <tr><td class="what">boot()</td><td class="desc">Loads sql.js, creates the DB, runs DDL, inserts every row, records row counts.</td><td class="desc">sql.js, renderSchema</td></tr>
+          <tr><td class="what">renderSchema</td><td class="desc">Builds the left rail of tables/columns; clicks insert <code>TABLE.COLUMN</code> into the editor.</td><td class="desc">insertIntoEditor</td></tr>
+          <tr><td class="what">runSql / execSQL</td><td class="desc">Executes SQL against the engine, times it, renders or reports the error.</td><td class="desc">sql.js, renderResults</td></tr>
+          <tr><td class="what">askLLM</td><td class="desc">Sends schema + question to Ollama, returns raw model text.</td><td class="desc">Ollama HTTP</td></tr>
+          <tr><td class="what">extractSQL / isReadOnly</td><td class="desc">Pulls the SELECT out of the model reply; rejects anything non-read-only.</td><td class="desc">onAsk</td></tr>
+          <tr><td class="what">onAsk</td><td class="desc">Orchestrates the Ask path: chat echo → model → guard → run → render.</td><td class="desc">askLLM, runSql</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="boot">
+      <h2 class="sec"><span class="n">04</span> Boot workflow</h2>
+      <p class="lede">Runs once, when the page opens. Ends with the status chip reading <code>ok · 5 tables · 36 rows</code>.</p>
+      <ol>
+        <li>Page parses; the browser fetches <code>sql-wasm.js</code> from the CDN and its <code>.wasm</code> companion.</li>
+        <li><code>initSqlJs()</code> resolves; <code>boot()</code> creates an empty in-memory database.</li>
+        <li><code>DDL</code> runs → the 5 tables exist (empty).</li>
+        <li>For each table in <code>_order</code>: <code>parseCSV()</code> splits the embedded text into rows, then a prepared <code>INSERT</code> writes them with the fixed column list.</li>
+        <li>Row counts are stored in <code>DB_INFO</code>; <code>renderSchema()</code> draws the rail; the status chip updates.</li>
+      </ol>
+      <div class="callout warn">
+        <div class="h">If boot fails</div>
+        The chip turns red and the schema rail shows the error. Almost always a blocked CDN — the engine could not download. Check network / CDN access.
+      </div>
+    </section>
+
+    <section id="ask">
+      <h2 class="sec"><span class="n">05</span> Ask workflow (English → SQL)</h2>
+      <ol>
+        <li>You type a question and press Enter (<code>onAsk</code>).</li>
+        <li>Your question is echoed into the chat; a “thinking…” bubble appears.</li>
+        <li><code>askLLM</code> POSTs to <code>http://localhost:11434/v1/chat/completions</code> with a system prompt = the DDL + a column glossary + few-shot examples + the rule “output only one SELECT”.</li>
+        <li>The reply is passed to <code>extractSQL</code>, which strips fences/prose and keeps the <code>SELECT</code>.</li>
+        <li><code>isReadOnly</code> checks it: must start with <code>SELECT</code>/<code>WITH</code>/<code>EXPLAIN</code> and contain no destructive keyword.</li>
+        <li>The SQL is shown in a copyable block, then executed via <code>runSql</code>; the result grid fills below.</li>
+      </ol>
+      <div class="callout">
+        <div class="h">Why the model sees the schema</div>
+        The prompt embeds the exact table/column names and the join keys, so the model names things correctly instead of guessing. That glossary is what makes joins like <code>EMPLOYEES.DEP_ID = DEPARTMENTS.DEPT_ID_DEP</code> work.
+      </div>
+      <div class="callout warn">
+        <div class="h">Ollama must be reachable from the browser</div>
+        Browsers block cross-origin calls by default. Start Ollama with <code>OLLAMA_ORIGINS='*'</code>, or serve the page from <code>http://localhost</code>. On failure the page prints both fixes and Direct mode keeps working.
+      </div>
+    </section>
+
+    <section id="direct">
+      <h2 class="sec"><span class="n">06</span> Direct SQL workflow</h2>
+      <ol>
+        <li>Switch to <strong>Write SQL</strong> (or click a column in the schema rail to jump there).</li>
+        <li>Type SQL in the editor. <code>Ctrl</code>/<code>Cmd</code>+<code>Enter</code> or <strong>Run query</strong>.</li>
+        <li>The statement executes against the same in-memory engine — no model, no network.</li>
+        <li>Results render as a grid; multiple statements return the last result set.</li>
+      </ol>
+      <p>Direct mode is the fallback: it works with no Ollama, no keys, no server — just open the file.</p>
+    </section>
+
+    <section id="codemap">
+      <h2 class="sec"><span class="n">07</span> Code map</h2>
+      <p class="lede">Line ranges inside <code>sql-workbench.html</code> (729 lines). Sections are numbered in the source comments.</p>
+      <table class="map">
+        <thead><tr><th>Lines</th><th>Section</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td class="ln">1–9</td><td class="what">head</td><td class="desc">Meta, viewport, Google Fonts (Fraunces + JetBrains Mono).</td></tr>
+          <tr><td class="ln">10–242</td><td class="what">CSS</td><td class="desc">Design tokens (<code>:root</code>), dark + light themes, layout, all component styles.</td></tr>
+          <tr><td class="ln">254–313</td><td class="what">markup</td><td class="desc">Header bar, schema rail, tabs + both panels, results area.</td></tr>
+          <tr><td class="ln">314</td><td class="what">CDN script</td><td class="desc">Loads <code>sql-wasm.js</code> (pins engine version 1.13.0).</td></tr>
+          <tr><td class="ln">321–322</td><td class="what">config</td><td class="desc"><code>SQLJS_CDN</code>, <code>OLLAMA_URL</code>.</td></tr>
+          <tr><td class="ln">324–385</td><td class="what">§1 data</td><td class="desc"><code>DDL</code> and the <code>DATA</code> object (5 CSVs + column lists + <code>_order</code>).</td></tr>
+          <tr><td class="ln">387–406</td><td class="what">§2 parseCSV</td><td class="desc">RFC-4180 CSV parser — quote-aware, skips CR.</td></tr>
+          <tr><td class="ln">408–435</td><td class="what">§3 boot</td><td class="desc">Engine init, DDL, per-table inserts, <code>DB_INFO</code>, status chip.</td></tr>
+          <tr><td class="ln">437–463</td><td class="what">§4 schema pane</td><td class="desc">Rail rendering; column click → editor insert.</td></tr>
+          <tr><td class="ln">465–534</td><td class="what">§5 exec/render</td><td class="desc"><code>execSQL</code>, <code>buildResultCard</code>, <code>buildErrorCard</code>, <code>runSql</code> (target-aware).</td></tr>
+          <tr><td class="ln">536–552</td><td class="what">§6 editor</td><td class="desc">SQL textarea wiring, Ctrl+Enter, <code>insertIntoEditor</code>.</td></tr>
+          <tr><td class="ln">554–562</td><td class="what">§7 tabs</td><td class="desc"><code>switchTab</code> — Ask ⇄ Write SQL.</td></tr>
+          <tr><td class="ln">564–639</td><td class="what">§8 NL→SQL</td><td class="desc"><code>GLOSSARY</code>, <code>SYSTEM_PROMPT</code>, <code>extractSQL</code>, <code>isReadOnly</code>, <code>askLLM</code>.</td></tr>
+          <tr><td class="ln">641–714</td><td class="what">§9 chat</td><td class="desc"><code>addMsg</code>, <code>addSqlBlock</code> (copy button), <code>onAsk</code> orchestration + inline result host.</td></tr>
+          <tr><td class="ln">716–720</td><td class="what">§10 theme</td><td class="desc">Dark/light toggle.</td></tr>
+          <tr><td class="ln">722–725</td><td class="what">§11 start</td><td class="desc"><code>boot()</code> call with failure handler.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="data">
+      <h2 class="sec"><span class="n">08</span> Data model</h2>
+      <p class="lede">Five tables. CSVs are headerless, so columns are matched positionally against the lists in <code>DATA</code>.</p>
+      <table class="map">
+        <thead><tr><th>Table</th><th>Rows</th><th>Columns</th></tr></thead>
+        <tbody>
+          <tr><td class="ln">EMPLOYEES</td><td>10</td><td class="desc">EMP_ID, F_NAME, L_NAME, SSN, B_DATE, SEX, ADDRESS, JOB_ID, SALARY, MANAGER_ID, DEP_ID</td></tr>
+          <tr><td class="ln">JOBS</td><td>10</td><td class="desc">JOB_IDENT, JOB_TITLE, MIN_SALARY, MAX_SALARY</td></tr>
+          <tr><td class="ln">JOB_HISTORY</td><td>10</td><td class="desc">EMPL_ID, START_DATE, JOBS_ID, DEPT_ID</td></tr>
+          <tr><td class="ln">DEPARTMENTS</td><td>3</td><td class="desc">DEPT_ID_DEP, DEP_NAME, MANAGER_ID, LOC_ID</td></tr>
+          <tr><td class="ln">LOCATIONS</td><td>3</td><td class="desc">LOCT_ID, DEP_ID_LOC</td></tr>
+        </tbody>
+      </table>
+      <h3>Join keys</h3>
+      <dl class="kv">
+        <dt>EMPLOYEES.DEP_ID</dt><dd>→ DEPARTMENTS.DEPT_ID_DEP &nbsp;(values '2','5','7')</dd>
+        <dt>EMPLOYEES.JOB_ID</dt><dd>→ JOBS.JOB_IDENT</dd>
+        <dt>JOB_HISTORY.EMPL_ID</dt><dd>→ EMPLOYEES.EMP_ID</dd>
+        <dt>JOB_HISTORY.JOBS_ID</dt><dd>→ JOBS.JOB_IDENT</dd>
+        <dt>DEPARTMENTS.LOC_ID</dt><dd>→ LOCATIONS.LOCT_ID</dd>
+      </dl>
+      <div class="callout">
+        <div class="h">Dates &amp; types</div>
+        Dates are stored as <code>YYYY-MM-DD</code> text; SQLite compares them as strings, which sorts correctly. Column types come from your DDL but SQLite is dynamically typed, so no coercion runs on insert.
+      </div>
+    </section>
+
+    <section id="config">
+      <h2 class="sec"><span class="n">09</span> Config knobs</h2>
+      <dl class="kv">
+        <dt>model</dt><dd>Top-bar input. Must match a name from <code>ollama list</code>. Default <code>deepseek-v4.1-flash:cloud</code>.</dd>
+        <dt>OLLAMA_URL</dt><dd>Line 322. Change if Ollama runs on another host/port.</dd>
+        <dt>SQLJS_CDN</dt><dd>Line 321. Bump or mirror the engine version here.</dd>
+        <dt>DATA / DDL</dt><dd>Lines 326–385. Swap in new CSVs or a new schema; keep <code>cols</code> in file order.</dd>
+        <dt>SYSTEM_PROMPT</dt><dd>Lines 579–602. Tune the NL→SQL rules, glossary, and few-shot examples.</dd>
+      </dl>
+    </section>
+
+    <section id="notes">
+      <h2 class="sec"><span class="n">10</span> Limits &amp; gotchas</h2>
+      <ul>
+        <li><strong>In-memory only.</strong> Reload resets to the original CSVs. Nothing is saved back to your files.</li>
+        <li><strong>Read-only for Ask.</strong> Generated DML/DDL is refused by design. Direct mode allows writes, but they vanish on reload.</li>
+        <li><strong>Ollama origin.</strong> Ask mode needs <code>OLLAMA_ORIGINS='*'</code> or a served page. Direct mode never needs it.</li>
+        <li><strong>CDN dependency at load.</strong> No sql.js download → no database. Cache it locally if you need fully offline runs.</li>
+        <li><strong>Headerless CSVs.</strong> If you replace a CSV, column <em>order</em> must match the <code>cols</code> array exactly.</li>
+        <li><strong>Extraction is heuristic.</strong> If the model wraps SQL in prose the parser still finds it, but a model that emits two statements may confuse the guard.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  });
+</script>
+</body>
+</html>

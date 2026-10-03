@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SQL Workbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        oklch(17% 0.012 265);
+    --bg-2:      oklch(21% 0.014 265);
+    --surface:   oklch(24% 0.016 265);
+    --surface-2: oklch(28% 0.018 265);
+    --line:      oklch(33% 0.02 265);
+    --ink:       oklch(93% 0.01 265);
+    --ink-dim:   oklch(70% 0.015 265);
+    --ink-faint: oklch(55% 0.015 265);
+    --accent:    oklch(78% 0.16 72);
+    --accent-ink:oklch(20% 0.03 72);
+    --good:      oklch(78% 0.15 155);
+    --bad:       oklch(70% 0.19 25);
+    --radius: 10px;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --serif: "Fraunces", ui-serif, Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  :root[data-theme="light"] {
+    --bg:        oklch(97% 0.008 85);
+    --bg-2:      oklch(94% 0.01 85);
+    --surface:   oklch(100% 0 0);
+    --surface-2: oklch(96% 0.012 85);
+    --line:      oklch(86% 0.015 85);
+    --ink:       oklch(22% 0.02 265);
+    --ink-dim:   oklch(42% 0.02 265);
+    --ink-faint: oklch(58% 0.015 265);
+    --accent:    oklch(58% 0.16 55);
+    --accent-ink:oklch(98% 0.01 55);
+    --good:      oklch(52% 0.13 155);
+    --bad:       oklch(55% 0.19 25);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, color-mix(in oklch, var(--accent) 9%, transparent), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ---- top bar ---- */
+  header.top {
+    display: flex; align-items: center; gap: 18px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in oklch, var(--bg-2) 88%, transparent);
+    backdrop-filter: blur(8px);
+    position: sticky; top: 0; z-index: 20;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 {
+    font-family: var(--serif);
+    font-weight: 600; font-size: 22px; letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .brand .sub { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; }
+  .spacer { flex: 1 1 auto; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--mono); font-size: 11.5px;
+    padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface); color: var(--ink-dim);
+    white-space: nowrap;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-faint); }
+  .dot.ok  { background: var(--good); box-shadow: 0 0 0 3px color-mix(in oklch, var(--good) 25%, transparent); }
+  .dot.err { background: var(--bad);  box-shadow: 0 0 0 3px color-mix(in oklch, var(--bad) 25%, transparent); }
+
+  .model-wrap { display: flex; align-items: center; gap: 6px; }
+  .model-wrap label { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+  input.model {
+    font-family: var(--mono); font-size: 12px;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 9px; width: 210px;
+  }
+  button.ghost {
+    font-family: var(--mono); font-size: 11.5px;
+    background: transparent; color: var(--ink-dim);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 10px; cursor: pointer;
+  }
+  button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
+
+  /* ---- layout ---- */
+  main {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 0;
+    min-height: 0;
+  }
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; }
+    aside.schema { border-right: none; border-bottom: 1px solid var(--line); max-height: 240px; }
+  }
+
+  aside.schema {
+    border-right: 1px solid var(--line);
+    background: color-mix(in oklch, var(--bg-2) 60%, transparent);
+    overflow: auto;
+    padding: 16px 14px 40px;
+  }
+  .schema h2 {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--ink-faint); margin: 0 0 12px;
+  }
+  .tbl { margin-bottom: 14px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+  .tbl > .tbl-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 8px 10px; cursor: pointer; user-select: none;
+    font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--accent);
+    background: var(--surface-2);
+  }
+  .tbl > .tbl-head .rc { font-weight: 400; color: var(--ink-faint); font-size: 10.5px; }
+  .col {
+    display: flex; justify-content: space-between; gap: 8px;
+    font-family: var(--mono); font-size: 11.5px; padding: 4px 10px;
+    color: var(--ink-dim); border-top: 1px solid color-mix(in oklch, var(--line) 55%, transparent);
+    cursor: pointer;
+  }
+  .col:hover { background: color-mix(in oklch, var(--accent) 10%, transparent); color: var(--ink); }
+
+  section.work { display: flex; flex-direction: column; min-height: 0; }
+
+  /* ---- tabs ---- */
+  .tabs { display: flex; gap: 2px; padding: 12px 18px 0; }
+  .tab {
+    font-family: var(--mono); font-size: 12.5px;
+    padding: 8px 14px; border: 1px solid transparent; border-bottom: none;
+    border-radius: 9px 9px 0 0; background: transparent; color: var(--ink-faint);
+    cursor: pointer; position: relative;
+  }
+  .tab[aria-selected="true"] {
+    color: var(--ink); background: var(--surface);
+    border-color: var(--line);
+  }
+  .tab[aria-selected="true"]::after {
+    content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; background: var(--surface);
+  }
+
+  .panel-wrap {
+    flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+    border-top: 1px solid var(--line);
+  }
+  .panel { display: none; flex: 1 1 auto; min-height: 0; flex-direction: column; }
+  .panel.active { display: flex; }
+
+  /* ---- ask panel ---- */
+  .chat { flex: 1 1 auto; overflow: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 900px; }
+  .msg.assistant { max-width: 100%; }
+  .msg.assistant .bubble { width: 100%; }
+  .res-host { margin-top: 2px; }
+  .msg .who { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 5px; }
+  .msg.user .bubble {
+    display: inline-block; background: var(--surface-2); border: 1px solid var(--line);
+    padding: 9px 13px; border-radius: 12px; border-bottom-left-radius: 3px;
+  }
+  .msg.err .bubble { border-color: var(--bad); color: var(--bad); background: color-mix(in oklch, var(--bad) 8%, var(--surface)); }
+  .sqlblock {
+    position: relative; margin: 8px 0;
+    background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 12px 12px 10px;
+    font-family: var(--mono); font-size: 12.5px; white-space: pre-wrap; word-break: break-word;
+    color: var(--ink);
+  }
+  .sqlblock .cp {
+    position: absolute; top: 6px; right: 6px; opacity: 0; transition: opacity .15s;
+  }
+  .sqlblock:hover .cp { opacity: 1; }
+
+  /* ---- sql panel ---- */
+  .editor-wrap { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+  textarea.editor {
+    width: 100%; min-height: 150px; resize: vertical;
+    font-family: var(--mono); font-size: 13px; line-height: 1.55;
+    background: var(--bg-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 12px 14px; tab-size: 2;
+  }
+  textarea.editor:focus { outline: none; border-color: var(--accent); }
+  .row-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  button.primary {
+    font-family: var(--mono); font-size: 12.5px; font-weight: 700;
+    background: var(--accent); color: var(--accent-ink);
+    border: none; border-radius: 8px; padding: 9px 16px; cursor: pointer;
+  }
+  button.primary:hover { filter: brightness(1.08); }
+  button.primary:disabled { opacity: .5; cursor: progress; }
+  kbd { font-family: var(--mono); font-size: 10.5px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; color: var(--ink-faint); }
+  .hint { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+
+  /* ---- composer ---- */
+  .composer { border-top: 1px solid var(--line); padding: 12px 18px 16px; display: flex; gap: 10px; align-items: flex-end; }
+  .composer textarea {
+    flex: 1 1 auto; resize: none; min-height: 44px; max-height: 160px;
+    font-family: var(--sans); font-size: 14px;
+    background: var(--bg-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  }
+  .composer textarea:focus { outline: none; border-color: var(--accent); }
+
+  /* ---- results ---- */
+  .results { border-top: 1px solid var(--line); background: color-mix(in oklch, var(--bg-2) 55%, transparent); }
+  .res-card { border-bottom: 1px solid var(--line); }
+  .res-card:last-child { border-bottom: none; }
+  .res-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 8px 18px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint);
+    border-bottom: 1px solid var(--line);
+  }
+  .res-bar .st-ok { color: var(--good); }
+  .res-bar .st-err { color: var(--bad); }
+  .table-scroll { overflow: auto; max-height: 44vh; }
+  /* inline result shown under a chat answer */
+  .res-card.inline { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 8px; background: color-mix(in oklch, var(--bg-2) 55%, transparent); }
+  .res-card.inline .res-bar { padding: 6px 12px; background: color-mix(in oklch, var(--surface) 50%, transparent); }
+  .res-card.inline .table-scroll { max-height: none; }
+  .res-card.inline table.grid thead th { background: var(--bg-2); }
+  table.grid { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 12px; }
+  table.grid th, table.grid td { text-align: left; padding: 6px 10px; border-bottom: 1px solid color-mix(in oklch, var(--line) 60%, transparent); white-space: nowrap; }
+  table.grid thead th { position: sticky; top: 0; background: var(--surface-2); color: var(--accent); font-weight: 500; z-index: 1; }
+  table.grid tbody tr:hover td { background: color-mix(in oklch, var(--accent) 7%, transparent); }
+  td.null { color: var(--ink-faint); font-style: italic; }
+  .empty-note { padding: 16px 18px; color: var(--ink-faint); font-family: var(--mono); font-size: 12px; }
+  .err-box { margin: 14px; padding: 12px 14px; border: 1px solid var(--bad); border-radius: 8px; color: var(--bad); background: color-mix(in oklch, var(--bad) 8%, transparent); font-family: var(--mono); font-size: 12px; white-space: pre-wrap; }
+
+  .spin { display:inline-block; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: sp .7s linear infinite; vertical-align: -2px; margin-right: 8px;}
+  @keyframes sp { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2s; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>SQL&nbsp;Workbench</h1>
+    <span class="sub">hr&nbsp;/&nbsp;sqlite&nbsp;· in-browser</span>
+  </div>
+  <div class="spacer"></div>
+  <span class="chip"><span class="dot ok" id="dbDot"></span><span id="dbStatus">loading…</span></span>
+  <div class="model-wrap">
+    <label for="model">model</label>
+    <input class="model" id="model" value="deepseek-v4.1-flash:cloud" spellcheck="false" />
+  </div>
+  <a class="ghost" href="help.html" title="Help — workflow & architecture" style="text-decoration:none;line-height:1;padding:7px 10px">?</a>
+  <button class="ghost" id="themeBtn" title="Toggle theme">◐</button>
+</header>
+
+<main>
+  <aside class="schema" id="schemaPane">
+    <h2>Schema</h2>
+    <div id="schemaList"></div>
+  </aside>
+
+  <section class="work">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tabAsk" role="tab" aria-selected="true" data-panel="ask">Ask the database</button>
+      <button class="tab" id="tabSql" role="tab" aria-selected="false" data-panel="sql">Write SQL</button>
+    </div>
+
+    <div class="panel-wrap">
+      <div class="panel active" id="panel-ask" role="tabpanel">
+        <div class="chat" id="chat">
+          <div class="msg"><div class="who">workbench</div><div class="bubble">Database ready. Ask in plain English — e.g. <em>“who earns the most, with their department name?”</em> — or switch to <strong>Write SQL</strong> for direct queries.</div></div>
+        </div>
+        <div class="composer">
+          <textarea id="askInput" rows="1" placeholder="Ask a question about the data…"></textarea>
+          <button class="primary" id="askBtn">Ask</button>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-sql" role="tabpanel">
+        <div class="editor-wrap">
+          <textarea class="editor" id="sqlEditor" spellcheck="false">SELECT e.F_NAME, e.L_NAME, d.DEP_NAME, e.SALARY
+FROM EMPLOYEES e
+JOIN DEPARTMENTS d ON e.DEP_ID = d.DEPT_ID_DEP
+ORDER BY e.SALARY DESC;</textarea>
+          <div class="row-actions">
+            <button class="primary" id="runBtn">Run query</button>
+            <span class="hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run · click a column in the schema to insert it</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results">
+      <div id="resBody"><div class="empty-note">Run a query to see results.</div></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/sql-wasm.js"></script>
+<script>
+/* ============================================================
+   SQL Workbench — single-file app
+   In-memory SQLite (sql.js) + Ollama (OpenAI-compatible) NL->SQL
+   ============================================================ */
+
+const SQLJS_CDN = "https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/";
+const OLLAMA_URL = "http://localhost:11434/v1/chat/completions";
+
+/* ---------- 1. embedded schema + data (headerless CSVs) ---------- */
+
+const DDL = `
+CREATE TABLE EMPLOYEES (
+  EMP_ID CHAR(9) NOT NULL, F_NAME VARCHAR(15) NOT NULL, L_NAME VARCHAR(15) NOT NULL,
+  SSN CHAR(9), B_DATE DATE, SEX CHAR, ADDRESS VARCHAR(30),
+  JOB_ID CHAR(9), SALARY DECIMAL(10,2), MANAGER_ID CHAR(9), DEP_ID CHAR(9) NOT NULL,
+  PRIMARY KEY (EMP_ID));
+CREATE TABLE JOB_HISTORY (
+  EMPL_ID CHAR(9) NOT NULL, START_DATE DATE, JOBS_ID CHAR(9) NOT NULL, DEPT_ID CHAR(9),
+  PRIMARY KEY (EMPL_ID, JOBS_ID));
+CREATE TABLE JOBS (
+  JOB_IDENT CHAR(9) NOT NULL, JOB_TITLE VARCHAR(30), MIN_SALARY DECIMAL(10,2), MAX_SALARY DECIMAL(10,2),
+  PRIMARY KEY (JOB_IDENT));
+CREATE TABLE DEPARTMENTS (
+  DEPT_ID_DEP CHAR(9) NOT NULL, DEP_NAME VARCHAR(15), MANAGER_ID CHAR(9), LOC_ID CHAR(9),
+  PRIMARY KEY (DEPT_ID_DEP));
+CREATE TABLE LOCATIONS (
+  LOCT_ID CHAR(9) NOT NULL, DEP_ID_LOC CHAR(9) NOT NULL,
+  PRIMARY KEY (LOCT_ID, DEP_ID_LOC));
+`;
+
+const DATA = {
+  EMPLOYEES: { cols: ["EMP_ID","F_NAME","L_NAME","SSN","B_DATE","SEX","ADDRESS","JOB_ID","SALARY","MANAGER_ID","DEP_ID"], csv: `E1001,John,Thomas,123456,1976-09-01,M,"5631 Rice, OakPark,IL",100,100000,30001,2
+E1002,Alice,James,123457,1972-07-31,F,"980 Berry ln, Elgin,IL",200,80000,30002,5
+E1003,Steve,Wells,123458,1980-10-08,M,"291 Springs, Gary,IL",300,50000,30002,5
+E1004,Santosh,Kumar,123459,1985-07-20,M,"511 Aurora Av, Aurora,IL",400,60000,30002,5
+E1005,Ahmed,Hussain,123410,1981-04-01,M,"216 Oak Tree, Geneva,IL",500,70000,30001,2
+E1006,Nancy,Allen,123411,1978-06-02,F,"111 Green Pl, Elgin,IL",600,90000,30001,2
+E1007,Mary,Thomas,123412,1975-05-05,F,"100 Rose Pl, Gary,IL",650,65000,30003,7
+E1008,Bharath,Gupta,123413,1985-06-05,M,"145 Berry Ln, Naperville,IL",660,65000,30003,7
+E1009,Andrea,Jones,123414,1990-09-07,F,"120 Fall Creek, Gary,IL",234,70000,30003,7
+E1010,Ann,Jacob,123415,1982-03-30,F,"111 Britany Springs,Elgin,IL",220,70000,30002,5` },
+  JOB_HISTORY: { cols: ["EMPL_ID","START_DATE","JOBS_ID","DEPT_ID"], csv: `E1001,2000-08-01,100,2
+E1002,2001-08-01,200,5
+E1003,2001-08-16,300,5
+E1004,2000-08-16,400,5
+E1005,2000-05-30,500,2
+E1006,2001-08-16,600,2
+E1007,2002-05-30,650,7
+E1008,2010-05-06,660,7
+E1009,2016-08-16,234,7
+E1010,2016-08-16,220,5` },
+  JOBS: { cols: ["JOB_IDENT","JOB_TITLE","MIN_SALARY","MAX_SALARY"], csv: `100,Sr. Architect,60000,100000
+200,Sr. Software Developer,60000,80000
+300,Jr.Software Developer,40000,60000
+400,Jr.Software Developer,40000,60000
+500,Jr. Architect,50000,70000
+600,Lead Architect,70000,100000
+650,Jr. Designer,60000,70000
+660,Jr. Designer,60000,70000
+234,Sr. Designer,70000,90000
+220,Sr. Designer,70000,90000` },
+  DEPARTMENTS: { cols: ["DEPT_ID_DEP","DEP_NAME","MANAGER_ID","LOC_ID"], csv: `2,Architect Group,30001,L0001
+5,Software Group,30002,L0002
+7,Design Team,30003,L0003` },
+  LOCATIONS: { cols: ["LOCT_ID","DEP_ID_LOC"], csv: `L0001,2
+L0002,5
+L0003,7` },
+  // authoritative insert order
+  _order: ["EMPLOYEES","JOBS","JOB_HISTORY","DEPARTMENTS","LOCATIONS"]
+};
+
+/* ---------- 2. tiny RFC4180 CSV parser ---------- */
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = "", inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQ = false;
+      } else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+    else if (c === "\r") { /* skip */ }
+    else field += c;
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 1 || (r.length === 1 && r[0] !== ""));
+}
+
+/* ---------- 3. boot the database ---------- */
+let db = null;
+const DB_INFO = {};
+
+async function boot() {
+  const SQL = await initSqlJs({ locateFile: f => SQLJS_CDN + f });
+  db = new SQL.Database();
+  db.run(DDL);
+  for (const t of DATA._order) {
+    const { cols, csv } = DATA[t];
+    const rows = parseCSV(csv);
+    const stmt = db.prepare(
+      `INSERT INTO ${t} (${cols.join(",")}) VALUES (${cols.map(() => "?").join(",")})`
+    );
+    for (const r of rows) stmt.run(r.map(v => (v === "" ? null : v)));
+    stmt.free();
+    DB_INFO[t] = { cols, count: rows.length };
+  }
+  renderSchema();
+  const total = Object.values(DB_INFO).reduce((a, b) => a + b.count, 0);
+  setDbChip(`ok · ${DATA._order.length} tables · ${total} rows`, "ok");
+}
+
+function setDbChip(text, state) {
+  document.getElementById("dbStatus").textContent = text;
+  const d = document.getElementById("dbDot");
+  d.className = "dot" + (state ? " " + state : "");
+}
+
+/* ---------- 4. schema pane ---------- */
+function renderSchema() {
+  const wrap = document.getElementById("schemaList");
+  wrap.innerHTML = "";
+  for (const t of DATA._order) {
+    const info = DB_INFO[t];
+    const div = document.createElement("div");
+    div.className = "tbl";
+    const head = document.createElement("div");
+    head.className = "tbl-head";
+    head.innerHTML = `<span>${t}</span><span class="rc">${info.count} rows</span>`;
+    const list = document.createElement("div");
+    info.cols.forEach(c => {
+      const el = document.createElement("div");
+      el.className = "col";
+      el.textContent = c;
+      el.title = "Click to insert into the SQL editor";
+      el.addEventListener("click", () => insertIntoEditor(`${t}.${c}`));
+      list.appendChild(el);
+    });
+    head.addEventListener("click", () => {
+      list.style.display = list.style.display === "none" ? "" : "none";
+    });
+    div.appendChild(head); div.appendChild(list);
+    wrap.appendChild(div);
+  }
+}
+
+/* ---------- 5. SQL execution + result rendering ---------- */
+function execSQL(sql) {
+  const t0 = performance.now();
+  const res = db.exec(sql);
+  const ms = performance.now() - t0;
+  return { res, ms };
+}
+
+/* Build a self-contained result card (meta bar + table / note / error).
+   `inline` = rendered inside a chat answer rather than the bottom panel. */
+function buildResultCard({ res, ms }, note, inline) {
+  const card = document.createElement("div");
+  card.className = "res-card" + (inline ? " inline" : "");
+  const bar = document.createElement("div");
+  bar.className = "res-bar";
+  const body = document.createElement("div");
+  body.className = "table-scroll";
+  card.appendChild(bar); card.appendChild(body);
+
+  if (!res || res.length === 0) {
+    bar.innerHTML = `<span class="st-ok">✓ statement executed</span><span>· ${ms.toFixed(1)} ms</span>${note ? `<span>· ${note}</span>` : ""}`;
+    body.innerHTML = `<div class="empty-note">No rows returned (DDL/DML or empty result set).</div>`;
+    return card;
+  }
+  const rows = res[res.length - 1];
+  const totalRows = res.reduce((a, r) => a + r.values.length, 0);
+  bar.innerHTML = `<span class="st-ok">✓ success</span><span>· ${totalRows} row${totalRows === 1 ? "" : "s"}</span><span>· ${ms.toFixed(1)} ms</span>${note ? `<span>· ${note}</span>` : ""}`;
+
+  const table = document.createElement("table");
+  table.className = "grid";
+  const thead = document.createElement("thead");
+  const trh = document.createElement("tr");
+  rows.columns.forEach(c => { const th = document.createElement("th"); th.textContent = c; trh.appendChild(th); });
+  thead.appendChild(trh); table.appendChild(thead);
+  const tb = document.createElement("tbody");
+  for (const v of rows.values) {
+    const tr = document.createElement("tr");
+    for (const cell of v) {
+      const td = document.createElement("td");
+      if (cell === null || cell === undefined) { td.textContent = "null"; td.className = "null"; }
+      else td.textContent = String(cell);
+      tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  }
+  table.appendChild(tb);
+  body.appendChild(table);
+  return card;
+}
+
+function buildErrorCard(msg) {
+  const card = document.createElement("div");
+  card.className = "res-card";
+  card.innerHTML = `<div class="err-box">${escapeHtml(msg)}</div>`;
+  return card;
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+/* target = an element to render into (per-question, keeps history).
+   No target = the shared bottom panel (replaced each run). */
+function runSql(sql, note, target) {
+  if (!db) return;
+  const host = target || document.getElementById("resBody");
+  host.innerHTML = "";
+  try {
+    host.appendChild(buildResultCard(execSQL(sql), note, !!target));
+  } catch (e) {
+    host.appendChild(target ? buildErrorCard(e.message || String(e)) : buildErrorCard(e.message || String(e)));
+  }
+}
+
+/* ---------- 6. SQL editor ---------- */
+const editor = document.getElementById("sqlEditor");
+document.getElementById("runBtn").addEventListener("click", () => {
+  const sql = editor.value.trim();
+  if (sql) runSql(sql, "direct");
+});
+editor.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    e.preventDefault();
+    document.getElementById("runBtn").click();
+  }
+});
+function insertIntoEditor(text) {
+  editor.value = editor.value.replace(/\s*$/, "") + (editor.value.trim() ? "\n" : "") + text;
+  switchTab("sql");
+  editor.focus();
+}
+
+/* ---------- 7. tabs ---------- */
+function switchTab(name) {
+  document.getElementById("tabAsk").setAttribute("aria-selected", name === "ask");
+  document.getElementById("tabSql").setAttribute("aria-selected", name === "sql");
+  document.getElementById("panel-ask").classList.toggle("active", name === "ask");
+  document.getElementById("panel-sql").classList.toggle("active", name === "sql");
+}
+document.getElementById("tabAsk").addEventListener("click", () => switchTab("ask"));
+document.getElementById("tabSql").addEventListener("click", () => switchTab("sql"));
+
+/* ---------- 8. NL -> SQL via Ollama ---------- */
+const GLOSSARY = `
+Tables and key columns:
+- EMPLOYEES(EMP_ID, F_NAME, L_NAME, SSN, B_DATE, SEX, ADDRESS, JOB_ID, SALARY, MANAGER_ID, DEP_ID)
+  * DEP_ID references DEPARTMENTS.DEPT_ID_DEP  (values '2','5','7')
+  * JOB_ID references JOBS.JOB_IDENT
+  * MANAGER_ID holds the department manager id (30001/30002/30003)
+- DEPARTMENTS(DEPT_ID_DEP, DEP_NAME, MANAGER_ID, LOC_ID)
+  * DEP_NAME examples: 'Architect Group', 'Software Group', 'Design Team'
+- JOBS(JOB_IDENT, JOB_TITLE, MIN_SALARY, MAX_SALARY)
+- JOB_HISTORY(EMPL_ID, START_DATE, JOBS_ID, DEPT_ID)
+- LOCATIONS(LOCT_ID, DEP_ID_LOC)
+NOTE: to attach a department name to an employee, join EMPLOYEES.DEP_ID = DEPARTMENTS.DEPT_ID_DEP.
+Employee full name = F_NAME || ' ' || L_NAME.`;
+
+const SYSTEM_PROMPT = `You are a SQLite analyst. Translate the user's question into ONE valid SQLite SELECT statement.
+
+Rules:
+- Output ONLY the SQL. No prose, no markdown fences, no explanation.
+- Use a single SELECT (WITH ... SELECT is allowed). Never use INSERT/UPDATE/DELETE/DROP/ALTER/CREATE.
+- Use only the tables and columns listed below.
+- Prefer explicit JOINs over subqueries when both work.
+
+Schema:
+${DDL}
+${GLOSSARY}
+
+Examples:
+Q: How many employees are there?
+SELECT COUNT(*) AS employee_count FROM EMPLOYEES;
+
+Q: Show each employee's full name and salary, highest first.
+SELECT F_NAME || ' ' || L_NAME AS full_name, SALARY FROM EMPLOYEES ORDER BY SALARY DESC;
+
+Q: Which department has the highest average salary?
+SELECT d.DEP_NAME, ROUND(AVG(e.SALARY),2) AS avg_salary
+FROM EMPLOYEES e JOIN DEPARTMENTS d ON e.DEP_ID = d.DEPT_ID_DEP
+GROUP BY d.DEP_NAME ORDER BY avg_salary DESC LIMIT 1;
+`;
+
+function extractSQL(text) {
+  if (!text) return "";
+  const fence = text.match(/```(?:sql)?\s*([\s\S]*?)```/i);
+  let s = fence ? fence[1] : text;
+  if (!fence) {
+    const m = s.match(/\b(?:SELECT|WITH)\b[\s\S]*/i);
+    if (m) s = m[0];
+  }
+  s = s.replace(/^```|```$/g, "").trim();
+  return s.replace(/;+\s*$/, "");
+}
+
+const isReadOnly = sql =>
+  /^\s*(SELECT|WITH|EXPLAIN)\b/i.test(sql) &&
+  !/\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|TRUNCATE|ATTACH)\b/i.test(sql);
+
+async function askLLM(question) {
+  const model = document.getElementById("model").value.trim() || "deepseek-v4.1-flash:cloud";
+  const resp = await fetch(OLLAMA_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      temperature: 0,
+      stream: false,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: question }
+      ]
+    })
+  });
+  if (!resp.ok) throw new Error(`Ollama HTTP ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
+  const data = await resp.json();
+  const msg = data?.choices?.[0]?.message || {};
+  return (msg.content || msg.reasoning_content || "").trim();
+}
+
+/* ---------- 9. chat UI ---------- */
+const chat = document.getElementById("chat");
+function addMsg(kind, html, who) {
+  const div = document.createElement("div");
+  div.className = "msg " + kind;
+  if (who) { const w = document.createElement("div"); w.className = "who"; w.textContent = who; div.appendChild(w); }
+  const b = document.createElement("div"); b.className = "bubble"; b.innerHTML = html;
+  div.appendChild(b);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+function addSqlBlock(sql) {
+  const wrap = document.createElement("div");
+  wrap.className = "sqlblock";
+  const cp = document.createElement("button");
+  cp.className = "ghost cp"; cp.textContent = "copy";
+  cp.addEventListener("click", () => { navigator.clipboard?.writeText(sql); cp.textContent = "copied"; setTimeout(() => cp.textContent = "copy", 1200); });
+  const code = document.createElement("div"); code.textContent = sql;
+  wrap.appendChild(cp); wrap.appendChild(code);
+  return wrap;
+}
+
+async function onAsk() {
+  const input = document.getElementById("askInput");
+  const q = input.value.trim();
+  if (!q || !db) return;
+  input.value = "";
+  input.style.height = "auto";
+  addMsg("user", escapeHtml(q), "you");
+
+  const pending = addMsg("assistant", `<span class="spin"></span>thinking…`, "workbench");
+  const btn = document.getElementById("askBtn");
+  btn.disabled = true;
+  try {
+    const raw = await askLLM(q);
+    const sql = extractSQL(raw);
+    pending.remove();
+
+    if (!sql) { addMsg("err", "Model returned no SQL. Raw output:<br><br>" + escapeHtml(raw || "(empty)"), "workbench"); return; }
+    if (!isReadOnly(sql)) {
+      addMsg("err", "Generated SQL was not read-only — blocked for safety. Showing it instead:<br><br>" + escapeHtml(sql), "workbench");
+      return;
+    }
+    const holder = addMsg("assistant", "", "workbench");
+    holder.querySelector(".bubble").appendChild(addSqlBlock(sql));
+    const runNote = document.createElement("div");
+    runNote.className = "hint"; runNote.textContent = "↳ result";
+    holder.querySelector(".bubble").appendChild(runNote);
+    // per-question result host: each answer keeps its own table
+    const resHost = document.createElement("div");
+    resHost.className = "res-host";
+    holder.querySelector(".bubble").appendChild(resHost);
+    runSql(sql, "generated from question", resHost);
+  } catch (e) {
+    pending.remove();
+    addMsg("err",
+      escapeHtml(e.message || String(e)) +
+      `<br><br>Ollama not reachable from the browser. Fix:<br>` +
+      `&nbsp;&nbsp;1) <code>OLLAMA_ORIGINS='*' ollama serve</code><br>` +
+      `&nbsp;&nbsp;2) or serve this page: <code>python3 -m http.server 8000</code> then open <code>http://localhost:8000/sql-workbench.html</code>` +
+      `<br>Direct <strong>Write SQL</strong> mode keeps working without Ollama.`, "workbench");
+  } finally {
+    btn.disabled = false;
+  }
+}
+document.getElementById("askBtn").addEventListener("click", onAsk);
+document.getElementById("askInput").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onAsk(); }
+});
+document.getElementById("askInput").addEventListener("input", e => {
+  e.target.style.height = "auto";
+  e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+});
+
+/* ---------- 10. theme ---------- */
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+});
+
+/* ---------- 11. start ---------- */
+boot().catch(e => {
+  setDbChip("init failed", "err");
+  document.getElementById("schemaList").innerHTML = `<div class="err-box">${escapeHtml(e.message || String(e))}</div>`;
+});
+</script>
+</body>
+</html>
